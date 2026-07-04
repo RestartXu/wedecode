@@ -32,17 +32,23 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Pack artifact
+      - name: Prepare artifact directory
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path artifact
           Copy-Item -Recurse dist artifact/dist
           Copy-Item -Recurse public artifact/public
           Copy-Item -Recurse decryption-tool artifact/decryption-tool
-          Copy-Item -Recurse node_modules artifact/node_modules
           Copy-Item package.json artifact/package.json
           Copy-Item pnpm-lock.yaml artifact/pnpm-lock.yaml
 
+      - name: Install flat node_modules with npm
+        working-directory: artifact
+        run: npm install --production
+
+      - name: Write run instructions
+        shell: pwsh
+        run: |
           @"
           Wedecode - 微信小程序 wxapkg 反编译工具
           ==========================================
