@@ -1,4 +1,4 @@
-name: Buil2d and Upload Artifacts
+name: Build2 and Upload Artifacts
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
         run: pnpm run build
 
       - name: Install production dependencies only
-        run: pnpm install --prod --no-frozen-lockfile
+        run: pnpm install --prod --no-frozen-lockfile --ignore-scripts
 
       - name: Pack artifact
         shell: bash
