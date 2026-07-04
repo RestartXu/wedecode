@@ -1,0 +1,85 @@
+name: Buil2d and Upload Artifacts
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install all dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Install production dependencies only
+        run: pnpm install --prod --no-frozen-lockfile
+
+      - name: Pack artifact
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp -r dist/ artifact/dist/
+          cp -r public/ artifact/public/
+          cp -r decryption-tool/ artifact/decryption-tool/
+          cp -r node_modules/ artifact/node_modules/
+          cp package.json artifact/
+          cp pnpm-lock.yaml artifact/
+
+          cat > artifact/RUN.txt << 'EOF'
+          Wedecode - 微信小程序 wxapkg 反编译工具
+          ==========================================
+
+          环境要求: Node.js v18+ (https://nodejs.org/)
+
+          使用方式:
+
+          1) 命令行交互模式:
+             node dist/wedecode.js
+
+          2) 指定 wxapkg 文件反编译:
+             node dist/wedecode.js ./xxx.wxapkg
+
+          3) 反编译整个目录:
+             node dist/wedecode.js ./
+             node dist/wedecode.js ./ --out ./output_path
+
+          4) 启动 Web UI 可视化界面:
+             node dist/wedecode.js ui
+             然后浏览器打开 http://localhost:3000
+
+          常用参数:
+            -o, --out <path>   指定输出目录
+            --open-dir         编译结束后打开产物目录
+            --clear            清空旧产物
+            --px               使用 px 单位解析 CSS (默认 rpx)
+            --unpack-only      只解包，不反编译
+            --wxid <wxid>      指定微信小程序 WXID
+          EOF
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wedecode-linux-x64
+          path: artifact/
+          retention-days: 30
