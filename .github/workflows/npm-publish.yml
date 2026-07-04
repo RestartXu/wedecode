@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -26,27 +26,24 @@ jobs:
           node-version: "20"
           cache: pnpm
 
-      - name: Install all dependencies
+      - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
       - name: Build project
         run: pnpm run build
 
-      - name: Install production dependencies only
-        run: pnpm install --prod --no-frozen-lockfile --ignore-scripts
-
       - name: Pack artifact
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p artifact
-          cp -r dist/ artifact/dist/
-          cp -r public/ artifact/public/
-          cp -r decryption-tool/ artifact/decryption-tool/
-          cp -r node_modules/ artifact/node_modules/
-          cp package.json artifact/
-          cp pnpm-lock.yaml artifact/
+          New-Item -ItemType Directory -Force -Path artifact
+          Copy-Item -Recurse dist artifact/dist
+          Copy-Item -Recurse public artifact/public
+          Copy-Item -Recurse decryption-tool artifact/decryption-tool
+          Copy-Item -Recurse node_modules artifact/node_modules
+          Copy-Item package.json artifact/package.json
+          Copy-Item pnpm-lock.yaml artifact/pnpm-lock.yaml
 
-          cat > artifact/RUN.txt << 'EOF'
+          @"
           Wedecode - 微信小程序 wxapkg 反编译工具
           ==========================================
 
@@ -75,11 +72,11 @@ jobs:
             --px               使用 px 单位解析 CSS (默认 rpx)
             --unpack-only      只解包，不反编译
             --wxid <wxid>      指定微信小程序 WXID
-          EOF
+          "@ | Out-File -Encoding utf8 artifact/RUN.txt
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wedecode-linux-x64
+          name: wedecode-win-x64
           path: artifact/
           retention-days: 30
